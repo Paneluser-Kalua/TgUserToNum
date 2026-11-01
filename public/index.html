@@ -1,1 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kalua Telegram API Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030305;
+      --primary: #00f0ff;
+      --secondary: #8a2be2;
+      --surface: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #ffffff;
+      --text-dim: #8b8b99;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body, html { width: 100%; height: 100dvh; background-color: var(--bg); color: var(--text); overflow: hidden; position: fixed; }
+    .bg-glow { position: absolute; width: 150vw; height: 150vw; background: radial-gradient(circle, rgba(138,43,226,0.15) 0%, rgba(0,240,255,0.05) 40%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: -1; }
+    .glass { background: var(--surface); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    
+    #lockUI { position: absolute; inset: 0; z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; background: var(--bg); }
+    .lock-card { width: 100%; max-width: 320px; padding: 30px 20px; text-align: center; display: flex; flex-direction: column; gap: 20px; }
+    .lock-card h1 { font-size: 24px; font-weight: 700; background: linear-gradient(90deg, var(--primary), var(--secondary)); -webkit-background-clip: text; color: transparent; }
 
+    .app-container {
+      display: none;
+      flex-direction: column;
+      height: 100dvh;
+      padding: 20px;
+      gap: 16px;
+      max-width: 450px;
+      margin: 0 auto;
+      justify-content: center;
+    }
+    .header { text-align: center; margin-bottom: 5px; }
+    .header h2 { font-size: 22px; font-weight: 700; }
+    .header span { color: var(--primary); }
+    
+    .main-card { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    
+    .segments { display: flex; background: rgba(0,0,0,0.5); border-radius: 12px; padding: 4px; border: 1px solid var(--border); }
+    .seg-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-dim); border-radius: 9px; cursor: pointer; transition: 0.3s; }
+    .seg-btn.active { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+    .input-box { width: 100%; padding: 14px; background: rgba(0,0,0,0.6); border: 1px solid var(--border); border-radius: 14px; color: var(--text); font-size: 14px; text-align: center; outline: none; transition: 0.3s; }
+    .input-box:focus { border-color: var(--primary); box-shadow: 0 0 12px rgba(0,240,255,0.2); }
+    
+    .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #000; font-size: 14px; font-weight: 700; border: none; border-radius: 14px; text-transform: uppercase; cursor: pointer; }
+    .btn:active { transform: scale(0.96); }
+
+    #formView { display: flex; flex-direction: column; gap: 14px; }
+    #resultView { display: none; flex-direction: column; gap: 14px; animation: slideUp 0.3s ease; }
+    
+    .result-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(0,240,255,0.3); border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .res-data { flex: 1; overflow: hidden; }
+    .res-label { font-size: 10px; color: var(--primary); text-transform: uppercase; margin-bottom: 3px; letter-spacing: 1px; }
+    .res-value { font-family: monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+    .copy-btn { background: var(--surface); border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; color: var(--text); font-size: 11px; font-weight: 600; cursor: pointer; }
+
+    .footer-info { text-align: center; font-size: 11px; color: var(--text-dim); padding: 10px; }
+    .footer-info .dev-name { color: #ffffff; font-weight: 700; }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<!-- LOCK SCREEN -->
+<div id="lockUI">
+  <div class="glass lock-card">
+    <h1>TG API HUB</h1>
+    <input type="password" id="passInput" class="input-box" placeholder="Enter Password" onkeydown="if(event.key==='Enter')unlock()">
+    <button class="btn" onclick="unlock()" id="unlockBtn">Access Hub</button>
+  </div>
+</div>
+
+<!-- MAIN APP UI -->
+<div class="app-container" id="appUI">
+  <div class="header">
+    <h2>TG TO NUMBER <span>API HUB</span></h2>
+  </div>
+
+  <div class="glass main-card">
+    <div id="formView">
+      <div class="segments">
+        <div class="seg-btn active" onclick="setPlan(this, '1d')">1 Day</div>
+        <div class="seg-btn" onclick="setPlan(this, 'week')">1 Week</div>
+        <div class="seg-btn" onclick="setPlan(this, 'month')">1 Month</div>
+      </div>
+
+      <input type="text" id="devName" class="input-box" placeholder="Customer Username" autocomplete="off">
+      <input type="text" id="testNum" class="input-box" placeholder="Target TG Username (@KaluaPapa)" value="@KaluaPapa" autocomplete="off">
+      
+      <button class="btn" onclick="generate()">Generate API Key & URL</button>
+    </div>
+
+    <div id="resultView">
+      <h3 style="color:var(--primary); text-align:center; font-size:15px;">Key Generated Successfully</h3>
+      
+      <div class="result-box">
+        <div class="res-data">
+          <div class="res-label">API Key</div>
+          <div class="res-value" id="valKey">...</div>
+        </div>
+        <button class="copy-btn" onclick="copyData('valKey', this)">Copy</button>
+      </div>
+
+      <div class="result-box">
+        <div class="res-data">
+          <div class="res-label">Ready Endpoint</div>
+          <div class="res-value" id="valUrl">...</div>
+        </div>
+        <button class="copy-btn" onclick="copyData('valUrl', this)">Copy</button>
+      </div>
+
+      <button class="btn" onclick="resetUI()" style="background: var(--surface); color: var(--text); border: 1px solid var(--border);">Create Another</button>
+    </div>
+  </div>
+
+  <div class="footer-info">
+    Developer: <span class="dev-name">KaluaApiAdmin</span>
+  </div>
+</div>
+
+<script>
+const PASS = "KaluaApiStore";
+const SESSION = "kalua_tg_auth_v1";
+let activePlan = '1d';
+
+window.onload = () => {
+  if (sessionStorage.getItem(SESSION) === "true") {
+    document.getElementById('lockUI').style.display = 'none';
+    document.getElementById('appUI').style.display = 'flex';
+  }
+};
+
+function unlock() {
+  const input = document.getElementById('passInput');
+  const btn = document.getElementById('unlockBtn');
+  
+  if(input.value === PASS) {
+    sessionStorage.setItem(SESSION, "true");
+    btn.innerHTML = "VERIFIED ✓";
+    btn.style.background = "var(--primary)";
+    btn.style.color = "#000";
+    setTimeout(() => {
+      document.getElementById('lockUI').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('lockUI').style.display = 'none';
+        document.getElementById('appUI').style.display = 'flex';
+      }, 300);
+    }, 400);
+  } else {
+    input.value = "";
+    input.placeholder = "Wrong Password!";
+    input.style.borderColor = "#ff4444";
+    setTimeout(() => input.style.borderColor = "var(--border)", 1000);
+  }
+}
+
+function setPlan(el, plan) {
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activePlan = plan;
+}
+
+function generate() {
+  const user = document.getElementById('devName').value.trim() || 'USER';
+  const target = document.getElementById('testNum').value.trim() || '@KaluaPapa';
+  
+  const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
+  const pre = activePlan === 'month' ? 'M1' : activePlan === 'week' ? 'W1' : 'D1';
+  
+  const finalKey = `KALUA-TG-${pre}-${user.slice(0,5).toUpperCase()}-${rand}`;
+  const finalUrl = `${window.location.origin}/api/tg-lookup/${finalKey}?num=${encodeURIComponent(target)}`;
+
+  document.getElementById('valKey').innerText = finalKey;
+  document.getElementById('valUrl').innerText = finalUrl;
+
+  document.getElementById('formView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'flex';
+}
+
+function resetUI() {
+  document.getElementById('resultView').style.display = 'none';
+  document.getElementById('formView').style.display = 'flex';
+}
+
+function copyData(id, btn) {
+  const txt = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(txt).then(() => {
+    const oldTxt = btn.innerText;
+    btn.innerText = "COPIED";
+    btn.style.background = "var(--primary)";
+    btn.style.color = "#000";
+    setTimeout(() => {
+      btn.innerText = oldTxt;
+      btn.style.background = "var(--surface)";
+      btn.style.color = "var(--text)";
+    }, 1500);
+  });
+}
+</script>
+
+</body>
+</html>
