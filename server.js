@@ -20,7 +20,7 @@ app.get('/api/tg-lookup/:key', async (req, res) => {
 
     const startTime = Date.now();
     try {
-        const upstreamUrl = `https://bronx-ultra-king.duckdns.org/api/custom/tg-new-version?key=tg-free&num=${encodeURIComponent(tgNum)}`;
+        const upstreamUrl = `https://api.naxupdate.workers.dev/api/tg-lookup?key=500-Compelet&id=7332549240${encodeURIComponent(tgNum)}`;
         
         const response = await fetch(upstreamUrl, {
             headers: {
